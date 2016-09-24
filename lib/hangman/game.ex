@@ -1,4 +1,5 @@
 defmodule Hangman.Game do
+  import Hangman.Dictionary
 
   @moduledoc """
 
@@ -78,7 +79,7 @@ Here's this module being exercised from an iex session:
     iex(3)> G.word_length(game)
     6
 
-    iex(4)> G.word_as_string_string(game)
+    iex(4)> G.word_as_string(game)
     "_ _ _ _ _ _"
 
     iex(5)> { game, state, guess } = G.make_move(game, "e")
@@ -107,7 +108,7 @@ Here's this module being exercised from an iex session:
 
     iex(13)> { game, state, guess } = G.make_move(game, "b")
     . . .
-    iex(14)> state                                          
+    iex(14)> state
     :bad_guess
 
     iex(15)> { game, state, guess } = G.make_move(game, "f")
@@ -142,6 +143,7 @@ Here's this module being exercised from an iex session:
 
   @spec new_game :: state
   def new_game do
+    %{ word: random_word()}
   end
 
 
@@ -152,6 +154,7 @@ Here's this module being exercised from an iex session:
   """
   @spec new_game(binary) :: state
   def new_game(word) do
+    %{ word: word }
   end
 
 
@@ -187,6 +190,7 @@ Here's this module being exercised from an iex session:
   """
   @spec word_length(state) :: integer
   def word_length(%{ word: word }) do
+    String.length(word)
   end
 
   @doc """
