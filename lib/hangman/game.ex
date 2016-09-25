@@ -140,10 +140,13 @@ Here's this module being exercised from an iex session:
   Run a game of Hangman with our user. Use the dictionary to
   find a random word, and then let the user make guesses.
   """
+  defmodule Pack do
+    defstruct word: "", attempts: 0, guess: nil, blanks: nil, att_left: 10, reveal: false, status: nil
+  end
 
   @spec new_game :: state
   def new_game do
-    %{ word: random_word(), attempts: 0, guess: "o", blanks: nil, att_left: 10, reveal: false, status: nil}
+    %Pack{ word: random_word(), attempts: 0, guess: "t", blanks: nil, att_left: 10, reveal: false, status: nil}
   end
 
 
@@ -154,7 +157,7 @@ Here's this module being exercised from an iex session:
   """
   @spec new_game(binary) :: state
   def new_game(word) do
-    %{ word: word, attempts: 0, guess: "o", blanks: nil, att_left: 10, reveal: false, status: nil}
+    %Pack{ word: word, attempts: 0, guess: nil, blanks: nil, att_left: 10, reveal: false, status: nil}
   end
 
 
@@ -180,7 +183,7 @@ Here's this module being exercised from an iex session:
 
   @spec make_move(state, ch) :: { state, atom, optional_ch }
   def make_move(state, guess) do
-
+    
   end
 
 
@@ -216,6 +219,7 @@ Here's this module being exercised from an iex session:
 
   @spec turns_left(state) :: integer
   def turns_left(state) do
+
   end
 
   @doc """
@@ -229,7 +233,18 @@ Here's this module being exercised from an iex session:
 
   @spec word_as_string(state, boolean) :: binary
   def word_as_string(state, reveal \\ false) do
-    state.guess
+    #state_map = state
+    cond do
+      state.attempts == 0 ->
+        %{state | blanks: init_blanks(state.word)}
+      true ->
+        check_blanks(state)
+    end
+    #init_blanks()
+  end
+
+  def printer(state) do
+    state.blanks
   end
 
   ###########################
@@ -237,5 +252,29 @@ Here's this module being exercised from an iex session:
   ###########################
 
   # Your private functions go here
+  defp init_blanks(word) do
+    String.replace(word, ~r/./, "_")
+    |> String.split("")
+    |> Enum.join(" ")
+    |> String.trim_trailing
+  end
+
+  defp check_blanks(state) do
+    String.codepoints(state.word)
+    |> find_indexes(state.guess)
+    |> replace_lines(state.guess, state.blanks)
+  end
+
+  defp find_indexes(list, var) do
+  # From - http://stackoverflow.com/questions/18551814/find-indexes-from-list-in-elixir
+    indexes = Enum.with_index(list) |> Enum.filter_map(fn {x, _} -> x == var end, fn {_, i} -> i end)
+  # citation end
+  end
+
+  defp replace_lines(indexes, guess, blanks) do
+    updated_blanks = Enum.reduce(indexes, blanks, fn(index, acc_str) ->
+        String.split(acc_str, " ") |> List.replace_at(index, guess) |> Enum.join(" ")
+      end)
+  end
 
  end
