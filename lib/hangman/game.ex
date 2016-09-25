@@ -143,7 +143,7 @@ Here's this module being exercised from an iex session:
 
   @spec new_game :: state
   def new_game do
-    %{ word: random_word()}
+    %{ word: random_word(), attempts: 0, guess: "o", blanks: nil, att_left: 10, reveal: false, status: nil}
   end
 
 
@@ -154,7 +154,7 @@ Here's this module being exercised from an iex session:
   """
   @spec new_game(binary) :: state
   def new_game(word) do
-    %{ word: word }
+    %{ word: word, attempts: 0, guess: "o", blanks: nil, att_left: 10, reveal: false, status: nil}
   end
 
 
@@ -180,6 +180,7 @@ Here's this module being exercised from an iex session:
 
   @spec make_move(state, ch) :: { state, atom, optional_ch }
   def make_move(state, guess) do
+
   end
 
 
@@ -228,6 +229,7 @@ Here's this module being exercised from an iex session:
 
   @spec word_as_string(state, boolean) :: binary
   def word_as_string(state, reveal \\ false) do
+    state.guess
   end
 
   ###########################
