@@ -140,13 +140,13 @@ Here's this module being exercised from an iex session:
   Run a game of Hangman with our user. Use the dictionary to
   find a random word, and then let the user make guesses.
   """
-  defmodule Pack do
-    defstruct word: "", attempts: 0, guess: nil, blanks: nil, att_left: 10, reveal: false, status: nil
+  defmodule State do
+    defstruct word: "", guess: "", blanks: nil, att_left: 10, guessed: []
   end
 
   @spec new_game :: state
   def new_game do
-    %Pack{ word: random_word(), attempts: 0, guess: "t", blanks: nil, att_left: 10, reveal: false, status: nil}
+    %State{ word: random_word(), guess: "", blanks: nil, att_left: 10, guessed: []}
   end
 
 
@@ -157,7 +157,7 @@ Here's this module being exercised from an iex session:
   """
   @spec new_game(binary) :: state
   def new_game(word) do
-    %Pack{ word: word, attempts: 0, guess: nil, blanks: nil, att_left: 10, reveal: false, status: nil}
+    %State{ word: word, guess: "", blanks: nil, att_left: 10, guessed: []}
   end
 
 
@@ -182,8 +182,20 @@ Here's this module being exercised from an iex session:
   """
 
   @spec make_move(state, ch) :: { state, atom, optional_ch }
-  def make_move(state, guess) do
-    
+  def make_move(game, guess) do
+    result = cond do
+      game.att_left == 0 ->
+        :lost
+      !String.contains? game.blanks, "_" ->
+        :won
+      String.contains? game.word, guess ->
+        :good_guess
+      !String.contains? game.word, guess ->
+        turns_left(game).status
+        #:bad_guess
+    end
+    #word_as_string(game, guess)
+    ##{%Pack{game | guess: guess}, result, guess}
   end
 
 
@@ -219,7 +231,9 @@ Here's this module being exercised from an iex session:
 
   @spec turns_left(state) :: integer
   def turns_left(state) do
-
+    ##state = %Pack{state | att_left: state.att_left - 1}
+    ##state = %Pack{state | status: :bad_guess}
+    state
   end
 
   @doc """
@@ -233,14 +247,13 @@ Here's this module being exercised from an iex session:
 
   @spec word_as_string(state, boolean) :: binary
   def word_as_string(state, reveal \\ false) do
-    #state_map = state
-    cond do
-      state.attempts == 0 ->
-        %{state | blanks: init_blanks(state.word)}
-      true ->
-        check_blanks(state)
-    end
-    #init_blanks()
+    handle_word_as_string(state, reveal)
+    #cond do
+    #  state.blanks == nil ->
+    #    %Pack{state | blanks: init_blanks(state.word)}
+    #  true ->
+    #    check_blanks(state)
+    #end
   end
 
   def printer(state) do
@@ -252,6 +265,18 @@ Here's this module being exercised from an iex session:
   ###########################
 
   # Your private functions go here
+defp handle_word_as_string(state, true) do
+  state.word
+  |> String.split("")
+  |> Enum.join(" ")
+end
+defp handle_word_as_string(state, false) do
+  cond do
+    state.guessed == [] ->
+      %State{state | blanks: init_blanks(state.word)}
+  end
+end
+
   defp init_blanks(word) do
     String.replace(word, ~r/./, "_")
     |> String.split("")
@@ -259,10 +284,11 @@ Here's this module being exercised from an iex session:
     |> String.trim_trailing
   end
 
-  defp check_blanks(state) do
-    String.codepoints(state.word)
-    |> find_indexes(state.guess)
-    |> replace_lines(state.guess, state.blanks)
+  def check_blanks(state) do
+    new_string = String.codepoints(state.word)
+                |> find_indexes(state.guess)
+                |> replace_lines(state.guess, state.blanks)
+    ##%Pack{state | blanks: new_string}
   end
 
   defp find_indexes(list, var) do
