@@ -141,12 +141,14 @@ Here's this module being exercised from an iex session:
   find a random word, and then let the user make guesses.
   """
   defmodule State do
-    defstruct word: "", guess: "", blanks: nil, att_left: 10, guessed: []
+    defstruct word: "", guess: "", blanks: nil, att_left: 10, guessed: [], init: 1
   end
 
   @spec new_game :: state
   def new_game do
-    %State{ word: random_word(), guess: "", blanks: nil, att_left: 10, guessed: []}
+    word = random_word()
+    %State{ word: word, guess: "", blanks: init_blanks(word), att_left: 10, guessed: [], init: 1}
+
   end
 
 
@@ -157,7 +159,7 @@ Here's this module being exercised from an iex session:
   """
   @spec new_game(binary) :: state
   def new_game(word) do
-    %State{ word: word, guess: "", blanks: nil, att_left: 10, guessed: []}
+    %State{ word: word, guess: "", blanks: init_blanks(word), att_left: 10, guessed: [], init: 1}
   end
 
 
@@ -182,20 +184,9 @@ Here's this module being exercised from an iex session:
   """
 
   @spec make_move(state, ch) :: { state, atom, optional_ch }
-  def make_move(game, guess) do
-    result = cond do
-      game.att_left == 0 ->
-        :lost
-      !String.contains? game.blanks, "_" ->
-        :won
-      String.contains? game.word, guess ->
-        :good_guess
-      !String.contains? game.word, guess ->
-        turns_left(game).status
-        #:bad_guess
-    end
-    #word_as_string(game, guess)
-    ##{%Pack{game | guess: guess}, result, guess}
+  def make_move(state, guess) do
+    handle_make_move(%State{state | guessed: state.guessed ++ [guess]}, guess, String.contains?(state.word,guess), state.att_left, !String.contains?(state.blanks,"_"))
+
   end
 
 
@@ -219,6 +210,7 @@ Here's this module being exercised from an iex session:
 
   @spec letters_used_so_far(state) :: [ binary ]
   def letters_used_so_far(state) do
+      state.guessed
   end
 
   @doc """
@@ -231,9 +223,7 @@ Here's this module being exercised from an iex session:
 
   @spec turns_left(state) :: integer
   def turns_left(state) do
-    ##state = %Pack{state | att_left: state.att_left - 1}
-    ##state = %Pack{state | status: :bad_guess}
-    state
+    state.att_left
   end
 
   @doc """
@@ -248,16 +238,12 @@ Here's this module being exercised from an iex session:
   @spec word_as_string(state, boolean) :: binary
   def word_as_string(state, reveal \\ false) do
     handle_word_as_string(state, reveal)
-    #cond do
-    #  state.blanks == nil ->
-    #    %Pack{state | blanks: init_blanks(state.word)}
-    #  true ->
-    #    check_blanks(state)
-    #end
   end
 
-  def printer(state) do
-    state.blanks
+  def compress(blanks) do
+    blanks
+    |> String.split(" ")
+    |> Enum.join("")
   end
 
   ###########################
@@ -265,30 +251,43 @@ Here's this module being exercised from an iex session:
   ###########################
 
   # Your private functions go here
-defp handle_word_as_string(state, true) do
-  state.word
-  |> String.split("")
-  |> Enum.join(" ")
-end
-defp handle_word_as_string(state, false) do
-  cond do
-    state.guessed == [] ->
-      %State{state | blanks: init_blanks(state.word)}
-  end
-end
-
-  defp init_blanks(word) do
-    String.replace(word, ~r/./, "_")
+  defp handle_word_as_string(state, true) do
+    state.word
     |> String.split("")
     |> Enum.join(" ")
     |> String.trim_trailing
   end
+  defp handle_word_as_string(state, false) do
+    state.blanks
+  end
 
-  def check_blanks(state) do
-    new_string = String.codepoints(state.word)
-                |> find_indexes(state.guess)
-                |> replace_lines(state.guess, state.blanks)
-    ##%Pack{state | blanks: new_string}
+  def handle_make_move(state, guess, true, _num, _bool) do
+    state = check_blanks(state, guess)
+    if String.contains?(state.blanks,"_") do
+      {check_blanks(state, guess), :good_guess, guess}
+    else
+      {check_blanks(state, guess), :won, guess}
+    end
+  end
+  #def handle_make_move(state, guess, true, 1, _bool), do: {check_blanks(state, guess), :won, guess}
+  #def handle_make_move(state, guess, true, _num, true), do: {check_blanks(state, guess), :good_guess, guess}
+  def handle_make_move(state, guess, false, 1, _bool), do: {check_blanks(%State{state | att_left: state.att_left-1}, guess), :lost, guess}
+  def handle_make_move(state, guess, false, _num, _bool), do: {check_blanks(%State{state | att_left: state.att_left-1}, guess), :bad_guess, guess}
+
+
+  def init_blanks(word) do
+    blanks = String.replace(word, ~r/./, "_")
+    |> String.split("")
+    |> Enum.join(" ")
+    |> String.trim_trailing
+
+  end
+
+  def check_blanks(state, guess) do
+    string_of_blanks = String.codepoints(state.word)
+    |> find_indexes(guess)
+    |> replace_lines(guess, state.blanks)
+    %State{state | blanks: string_of_blanks}
   end
 
   defp find_indexes(list, var) do
