@@ -20,16 +20,16 @@ defmodule Comp do
     #   "s","t","u","v","w","x",
     #   "y","z"
     # ]
-    IO.puts "Dude, the word is '#{game.word}' and it's length is #{length} \n"
+    # IO.puts "Dude, the word is '#{game.word}' and it's length is #{length} \n"
     guessing_point(game, game.att_left, nil, alphabets)
   end
 
-  def guessing_point(game, attempts, _status, alphabets) when attempts != 0 do
+  def guessing_point(game, _num, :won, _remaining__list), do: IO.puts "\nI won, you puny humans. The word was '#{game.word}'"
+  def guessing_point(game, attempts, status, alphabets) when attempts != 0 do
     IO.puts Game.word_as_string(game)
     guessing_point_handler(game, alphabets)
   end
   def guessing_point(game, 0, :lost, _remaining__list), do: IO.puts "I lost. The word was '#{game.word}'"
-  def guessing_point(game, 0, :won, _remaining__list), do: IO.puts "\nI won, you puny humans. The word was '#{game.word}'"
 
   #========== HELPERS =============
 
